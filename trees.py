@@ -5,8 +5,11 @@ __author__ = 'liheng'
 '''
 
 from math import log
+import operator
+
 
 #计算给定的集的香农熵
+#香农熵暂且简单的理解为信息的混乱程度
 def calcShannonEnt(dataSet):
     numEntries = len(dataSet)
     labelCounts = {}
@@ -25,7 +28,7 @@ def calcShannonEnt(dataSet):
         shannonEnt -= prob*log(prob,2)
     return shannonEnt
 
-def creatDataSet():
+def createDataSet():
     dataSet = [[1,1,'yes'],[1,1,'yes'],[1,0,'no'],[0,1,'no'],[0,1,'no'],[0,1,'no']]
     labels = ['no surfacing','flippers']
     return dataSet,labels
@@ -42,7 +45,7 @@ def splitDataSet(dataSet,axis,value):
 
 #选择最好的数据集划分方式
 def chooseBestFeatureTopSplit(dataSet):
-    numFeature = len(dataSet[0])-1
+    numFeature = len(dataSet[0])-1    #将最后的类别标签提取出去
     baseEntropy = calcShannonEnt(dataSet)
     bestInfoGain = 0.0
     bastFeature = -1
@@ -63,6 +66,42 @@ def chooseBestFeatureTopSplit(dataSet):
             bestInfoGain = infoGain
             bestFeature = i
     return bestFeature
+
+#多数表决程序
+def majorityCnt(classList):
+    classCount = {}
+    for vote in classList:
+        if vote not in classCount.keys():
+            classCount[vote] = 0
+            classCount[vote] += 1
+    sortedClassCount = sorted(classCount.iteritems(),key=operator.itemgetter(1),reverse=True)
+    return sortedClassCount[0][0]   #返回的是出现频率最高的标签
+
+#构建决策树
+def creatTree(dataSet,labels):
+    classList = [example[-1] for example in dataSet]
+    #当类别是完全相等的时候停止划分
+    if classList.count(classList[0]) == len(classList):
+        return classList[0]
+    #如果只有一种元素，返回出现的次数最多的
+    if len(dataSet[0]) == 1:
+        return majorityCnt(classList)
+    bestFeat = chooseBestFeatureTopSplit(dataSet)
+    bestFeatLabel = labels[bestFeat]
+    myTree = {bestFeatLabel:{}}
+    del labels[bestFeat]
+    featValues = [example[bestFeat] for example in dataSet]
+    uniqueVals = set(featValues)
+    for value in uniqueVals:
+        subLabels = labels[:]
+        myTree[bestFeatLabel][value] = creatTree(splitDataSet(dataSet,bestFeat,value),subLabels)
+    return myTree
+
+
+
+
+
+
 
 
 
